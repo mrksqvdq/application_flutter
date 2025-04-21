@@ -24,23 +24,15 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Production Monitor',
         theme: AppTheme.lightTheme,
-        home: Consumer<AuthProvider>(
-          builder: (context, authProvider, child) {
-            if (!authProvider.isAuthenticated) {
-              return const LoginScreen();
-            } else {
-              if (authProvider.userRole == 'manager') {
-                return const ManagerDashboard();
-              } else {
-                return const OperatorDashboard();
-              }
-            }
-          },
-        ),
-        routes: {
-          '/login': (context) => const LoginScreen(),
-          '/manager_dashboard': (context) => const ManagerDashboard(),
-          '/operator_dashboard': (context) => const OperatorDashboard(),
+        home: const LoginScreen(),
+        onGenerateRoute: (settings) {
+          // Clear the navigation stack when going to login
+          if (settings.name == '/login') {
+            return MaterialPageRoute(
+              builder: (context) => const LoginScreen(),
+            );
+          }
+          return null;
         },
       ),
     );

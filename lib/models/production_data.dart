@@ -1,26 +1,3 @@
-class ProductionSummary {
-  final int total;
-  final int good;
-  final int bad;
-  final double trend;
-
-  ProductionSummary({
-    required this.total,
-    required this.good,
-    required this.bad,
-    required this.trend,
-  });
-
-  factory ProductionSummary.fromJson(Map<String, dynamic> json) {
-    return ProductionSummary(
-      total: json['total'],
-      good: json['good'],
-      bad: json['bad'],
-      trend: json['trend'].toDouble(),
-    );
-  }
-}
-
 class ProductionData {
   final String time;
   final int total;
@@ -40,6 +17,29 @@ class ProductionData {
       total: json['total'],
       good: json['good'],
       bad: json['bad'],
+    );
+  }
+}
+
+class ProductionSummary {
+  final int total;
+  final int good;
+  final int bad;
+  final double trend;
+
+  ProductionSummary({
+    required this.total,
+    required this.good,
+    required this.bad,
+    required this.trend,
+  });
+
+  factory ProductionSummary.fromJson(Map<String, dynamic> json) {
+    return ProductionSummary(
+      total: json['total'],
+      good: json['good'],
+      bad: json['bad'],
+      trend: json['trend'].toDouble(),
     );
   }
 }

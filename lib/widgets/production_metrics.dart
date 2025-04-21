@@ -13,6 +13,7 @@ class ProductionMetrics extends StatelessWidget {
   Widget build(BuildContext context) {
     final qualityRate = summary.total > 0 ? (summary.good / summary.total * 100).round() : 0;
     final defectRate = summary.total > 0 ? (summary.bad / summary.total * 100).round() : 0;
+    final isSmallScreen = MediaQuery.of(context).size.width < 600;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -26,10 +27,11 @@ class ProductionMetrics extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         GridView.count(
-          crossAxisCount: 3,
+          crossAxisCount: isSmallScreen ? 1 : 3,
           crossAxisSpacing: 16,
           mainAxisSpacing: 16,
           shrinkWrap: true,
+          childAspectRatio: isSmallScreen ? 3 : 1.5,
           physics: const NeverScrollableScrollPhysics(),
           children: [
             // Total Production

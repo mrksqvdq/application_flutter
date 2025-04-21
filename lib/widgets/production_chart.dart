@@ -12,148 +12,123 @@ class ProductionChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return data.isEmpty
-        ? const Center(child: Text('No data available'))
-        : BarChart(
-            BarChartData(
-              alignment: BarChartAlignment.spaceAround,
-              maxY: _getMaxY(),
-              barTouchData: BarTouchData(
-                enabled: true,
-                touchTooltipData: BarTouchTooltipData(
-                  tooltipBgColor: Colors.blueGrey.shade800,
-                  getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                    String label;
-                    switch (rodIndex) {
-                      case 0:
-                        label = 'Total: ${rod.toY.round()}';
-                        break;
-                      case 1:
-                        label = 'Good: ${rod.toY.round()}';
-                        break;
-                      case 2:
-                        label = 'Bad: ${rod.toY.round()}';
-                        break;
-                      default:
-                        label = '';
-                    }
-                    return BarTooltipItem(
-                      label,
-                      const TextStyle(color: Colors.white),
-                    );
-                  },
+    final isSmallScreen = MediaQuery.of(context).size.width < 600;
+    
+    return BarChart(
+      BarChartData(
+        alignment: BarChartAlignment.spaceAround,
+        maxY: data.isEmpty ? 100 : data.map((e) => e.total.toDouble()).reduce((a, b) => a > b ? a : b) * 1.2,
+        barTouchData: BarTouchData(
+          enabled: true,
+          touchTooltipData: BarTouchTooltipData(
+            tooltipBgColor: Colors.white,
+            tooltipRoundedRadius: 8,
+            getTooltipItem: (group, groupIndex, rod, rodIndex) {
+              final dataPoint = data[groupIndex];
+              String value = '';
+              switch (rodIndex) {
+                case 0:
+                  value = dataPoint.total.toString();
+                  break;
+                case 1:
+                  value = dataPoint.good.toString();
+                  break;
+                case 2:
+                  value = dataPoint.bad.toString();
+                  break;
+              }
+              return BarTooltipItem(
+                value,
+                TextStyle(
+                  color: Colors.black,
+                  fontSize: isSmallScreen ? 10 : 12,
+                  fontWeight: FontWeight.bold,
                 ),
-              ),
-              titlesData: FlTitlesData(
-                show: true,
-                bottomTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    getTitlesWidget: (value, meta) {
-                      if (value < 0 || value >= data.length) {
-                        return const SizedBox.shrink();
-                      }
-                      return Padding(
-                        padding: const EdgeInsets.only(top: 8.0),
-                        child: Text(
-                          data[value.toInt()].time,
-                          style: const TextStyle(
-                            color: Colors.grey,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
-                      );
-                    },
+              );
+            },
+          ),
+        ),
+        titlesData: FlTitlesData(
+          show: true,
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (value, meta) {
+                return SideTitleWidget(
+                  axisSide: meta.axisSide,
+                  child: Text(
+                    data[value.toInt()].time,
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: isSmallScreen ? 8 : 10,
+                    ),
                   ),
-                ),
-                leftTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: 40,
-                    getTitlesWidget: (value, meta) {
-                      return Text(
-                        value.toInt().toString(),
-                        style: const TextStyle(
-                          color: Colors.grey,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                topTitles: AxisTitles(
-                  sideTitles: SideTitles(showTitles: false),
-                ),
-                rightTitles: AxisTitles(
-                  sideTitles: SideTitles(showTitles: false),
-                ),
-              ),
-              gridData: FlGridData(
-                show: true,
-                horizontalInterval: _getMaxY() / 5,
-                getDrawingHorizontalLine: (value) {
-                  return FlLine(
-                    color: Colors.grey.shade300,
-                    strokeWidth: 1,
-                    dashArray: [5, 5],
-                  );
-                },
-                drawVerticalLine: false,
-              ),
-              borderData: FlBorderData(
-                show: false,
-              ),
-              barGroups: _getBarGroups(),
+                );
+              },
+              reservedSize: isSmallScreen ? 24 : 30,
             ),
+          ),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (value, meta) {
+                return SideTitleWidget(
+                  axisSide: meta.axisSide,
+                  child: Text(
+                    value.toInt().toString(),
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: isSmallScreen ? 8 : 10,
+                    ),
+                  ),
+                );
+              },
+              reservedSize: isSmallScreen ? 28 : 36,
+            ),
+          ),
+          topTitles: AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          rightTitles: AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+        ),
+        gridData: FlGridData(
+          show: true,
+          horizontalInterval: 1,
+          getDrawingHorizontalLine: (value) => FlLine(
+            color: Colors.grey.withOpacity(0.2),
+            strokeWidth: 1,
+          ),
+        ),
+        borderData: FlBorderData(show: false),
+        barGroups: data.asMap().entries.map((entry) {
+          final dataPoint = entry.value;
+          return BarChartGroupData(
+            x: entry.key,
+            barRods: [
+              BarChartRodData(
+                toY: dataPoint.total.toDouble(),
+                color: Colors.blue,
+                width: isSmallScreen ? 8 : 12,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+              ),
+              BarChartRodData(
+                toY: dataPoint.good.toDouble(),
+                color: Colors.green,
+                width: isSmallScreen ? 8 : 12,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+              ),
+              BarChartRodData(
+                toY: dataPoint.bad.toDouble(),
+                color: Colors.red,
+                width: isSmallScreen ? 8 : 12,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+              ),
+            ],
           );
-  }
-
-  double _getMaxY() {
-    double maxY = 0;
-    for (var item in data) {
-      if (item.total > maxY) {
-        maxY = item.total.toDouble();
-      }
-    }
-    return maxY * 1.2; // Add 20% padding
-  }
-
-  List<BarChartGroupData> _getBarGroups() {
-    return List.generate(data.length, (index) {
-      return BarChartGroupData(
-        x: index,
-        barRods: [
-          BarChartRodData(
-            toY: data[index].total.toDouble(),
-            color: Colors.blue,
-            width: 8,
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(4),
-              topRight: Radius.circular(4),
-            ),
-          ),
-          BarChartRodData(
-            toY: data[index].good.toDouble(),
-            color: Colors.green,
-            width: 8,
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(4),
-              topRight: Radius.circular(4),
-            ),
-          ),
-          BarChartRodData(
-            toY: data[index].bad.toDouble(),
-            color: Colors.red,
-            width: 8,
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(4),
-              topRight: Radius.circular(4),
-            ),
-          ),
-        ],
-      );
-    });
+        }).toList(),
+      ),
+    );
   }
 }

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:production_monitor/models/production_data.dart';
 import 'package:production_monitor/providers/auth_provider.dart';
 import 'package:production_monitor/providers/production_provider.dart';
 import 'package:production_monitor/widgets/app_drawer.dart';
 import 'package:production_monitor/widgets/production_metrics.dart';
 import 'package:production_monitor/widgets/production_chart.dart';
-import 'dart:async'; // Add this import at the top
-
+import 'dart:async';
 
 class OperatorDashboard extends StatefulWidget {
   const OperatorDashboard({Key? key}) : super(key: key);
@@ -33,12 +33,6 @@ class _OperatorDashboardState extends State<OperatorDashboard> with SingleTicker
     _refreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
       _loadData();
     });
-
-    // Use Future.microtask to access providers in initState
-    Future.microtask(() {
-      context.read<ProductionProvider>();
-      context.read<AuthProvider>();
-    });
   }
 
   @override
@@ -55,24 +49,29 @@ class _OperatorDashboardState extends State<OperatorDashboard> with SingleTicker
   @override
   Widget build(BuildContext context) {
     final username = Provider.of<AuthProvider>(context).username;
-    final productionProvider = context.watch<ProductionProvider>();
+    final isSmallScreen = MediaQuery.of(context).size.width < 600;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Operator Dashboard'),
+        title: Text(
+          'Operator Dashboard',
+          style: TextStyle(fontSize: isSmallScreen ? 18 : 20),
+        ),
         actions: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Center(
-              child: Text(
-                'Hello, $username',
-                style: const TextStyle(fontSize: 14),
+          if (!isSmallScreen)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Center(
+                child: Text(
+                  'Hello, $username',
+                  style: const TextStyle(fontSize: 14),
+                ),
               ),
             ),
-          ),
         ],
         bottom: TabBar(
           controller: _tabController,
+          isScrollable: isSmallScreen,
           tabs: const [
             Tab(text: 'Hourly'),
             Tab(text: 'Daily'),
@@ -91,7 +90,7 @@ class _OperatorDashboardState extends State<OperatorDashboard> with SingleTicker
             onRefresh: _loadData,
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(16.0),
+              padding: EdgeInsets.all(isSmallScreen ? 8.0 : 16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -99,101 +98,32 @@ class _OperatorDashboardState extends State<OperatorDashboard> with SingleTicker
                     ProductionMetrics(summary: provider.summary!),
                   const SizedBox(height: 16),
                   SizedBox(
-                    height: 400,
+                    height: isSmallScreen ? 300 : 400,
                     child: TabBarView(
                       controller: _tabController,
                       children: [
                         // Hourly tab
-                        Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Hourly Production Quality',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                const Text(
-                                  'Production metrics for the last 12 hours',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                Expanded(
-                                  child: ProductionChart(data: provider.hourlyData),
-                                ),
-                              ],
-                            ),
-                          ),
+                        _buildChartCard(
+                          'Hourly Production Quality',
+                          'Production metrics for the last 12 hours',
+                          provider.hourlyData,
+                          isSmallScreen,
                         ),
                         
                         // Daily tab
-                        Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Daily Production Quality',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                const Text(
-                                  'Production metrics for the last 7 days',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                Expanded(
-                                  child: ProductionChart(data: provider.dailyData),
-                                ),
-                              ],
-                            ),
-                          ),
+                        _buildChartCard(
+                          'Daily Production Quality',
+                          'Production metrics for the last 7 days',
+                          provider.dailyData,
+                          isSmallScreen,
                         ),
                         
                         // Weekly tab
-                        Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Weekly Production Quality',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                const Text(
-                                  'Production metrics for the last 4 weeks',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                Expanded(
-                                  child: ProductionChart(data: provider.weeklyData),
-                                ),
-                              ],
-                            ),
-                          ),
+                        _buildChartCard(
+                          'Weekly Production Quality',
+                          'Production metrics for the last 4 weeks',
+                          provider.weeklyData,
+                          isSmallScreen,
                         ),
                       ],
                     ),
@@ -203,6 +133,38 @@ class _OperatorDashboardState extends State<OperatorDashboard> with SingleTicker
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildChartCard(String title, String subtitle, List<ProductionData> data, bool isSmallScreen) {
+    return Card(
+      child: Padding(
+        padding: EdgeInsets.all(isSmallScreen ? 8.0 : 16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: isSmallScreen ? 16 : 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: isSmallScreen ? 12 : 14,
+                color: Colors.grey,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: ProductionChart(data: data),
+            ),
+          ],
+        ),
       ),
     );
   }
